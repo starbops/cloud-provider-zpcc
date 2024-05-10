@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cloud-provider-zpcc
+  name: cloud-provider-zpcc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloud-provider-zpcc
+  template:
+    metadata:
+      labels:
+        app: cloud-provider-zpcc
+    spec:
+      containers:
+      - image: starbops/cloud-provider-zpcc:latest
+        name: cloud-provider-zpcc
+        args:
+        - --cloud-provider
+        - zpcc
+      serviceAccountName: cloud-provider
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloud-provider
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: configmap-reader
+rules:
+- apiGroups: [ "" ]
+  resources: [ "configmaps" ]
+  verbs: [ "get", "watch", "list" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-configmap
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: configmap-reader
+subjects:
+- kind: ServiceAccount
+  name: cloud-provider
+  namespace: default
